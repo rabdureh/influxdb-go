@@ -304,7 +304,7 @@ type TimePrecision string
 
 const (
 	Second      TimePrecision = "s"
-	Millisecond TimePrecision = "m"
+	Millisecond TimePrecision = "ms"
 	Microsecond TimePrecision = "u"
 )
 
@@ -360,6 +360,17 @@ func (self *Client) Ping() error {
 	return responseToError(resp, err, true)
 }
 
+func (self *Client) ForceCompaction() (error) {
+    url := self.getUrl("raft/force_compaction")
+    payload := map[string]string{}
+    data, err := json.Marshal(payload)
+    if err != nil {
+        return err
+    }
+    resp, err := self.httpClient.Post(url, "application/json", bytes.NewBuffer(data))
+    return responseToError(resp, err, true)
+}
+
 func (self *Client) AuthenticateDatabaseUser(database, username, password string) error {
 	url := self.getUrlWithUserAndPass(fmt.Sprintf("/db/%s/authenticate", database), username, password)
 	resp, err := self.httpClient.Get(url)
@@ -383,6 +394,17 @@ func (self *Client) DeleteContinuousQueries(id int) error {
 	return responseToError(resp, err, true)
 }
 
+func (self *Client) CreateShard() error {
+	url := self.getUrlWithUserAndPass("/cluster/shards", self.username, self.password)
+	payload := map[string]string{}
+	data, err := json.Marshal(payload)
+	if err != nil {
+		return err
+	}
+	resp, err := self.httpClient.Post(url, "application/json", bytes.NewBuffer(data))
+	return responseToError(resp, err, true)
+}
+
 func (self *Client) GetShards() (map[string]interface{}, error) {
 	url := self.getUrlWithUserAndPass("/cluster/shards", self.username, self.password)
 	body, err := self.get(url)
@@ -392,4 +414,10 @@ func (self *Client) GetShards() (map[string]interface{}, error) {
 		return nil, err
 	}
 	return shards, nil
+}
+
+func (self *Client) DropShard() error {
+	url := self.getUrlWithUserAndPass("/cluster/shards", self.username, self.password)
+	resp, err := self.del(url)
+	return responseToError(resp, err, true)
 }
